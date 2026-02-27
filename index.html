@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Coach AI v3.2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#FF9500">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
+    <style>
+        body { background: #000; color: #fff; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; height: 100vh; overflow: hidden; }
+        .dashboard { width: 100%; display: flex; flex-direction: column; align-items: center; padding: 10px 0; background: #111; border-bottom: 1px solid #333; flex-shrink: 0; }
+        .main-ring { position: relative; width: 120px; height: 120px; margin-bottom: 10px; }
+        .sub-rings { display: flex; justify-content: center; gap: 10px; width: 100%; margin-bottom: 8px; }
+        .ring-box { position: relative; width: 55px; height: 55px; text-align: center; }
+        svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        circle { fill: none; stroke-width: 7; stroke-linecap: round; transition: 1s ease; }
+        .bg { stroke: #222; }
+        #ring-main { stroke: #FF9500; stroke-dasharray: 345; stroke-dashoffset: 345; }
+        #ring-p { stroke: #FF3B30; stroke-dasharray: 157; stroke-dashoffset: 157; }
+        #ring-f { stroke: #4CD964; stroke-dasharray: 157; stroke-dashoffset: 157; }
+        #ring-c { stroke: #5AC8FA; stroke-dasharray: 157; stroke-dashoffset: 157; }
+        .label { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; width: 100%; }
+        .label b { display: block; font-size: 14px; line-height: 1; }
+        .label small { font-size: 7px; color: #888; text-transform: uppercase; }
+        
+        .top-btns { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-sm { background: #FF9500; border: none; color: #fff; padding: 8px 15px; border-radius: 8px; font-size: 11px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-sm:active { transform: scale(0.95); opacity: 0.8; }
+
+        #chat { flex-grow: 1; width: 100%; max-width: 500px; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 85%; padding: 10px 14px; border-radius: 15px; font-size: 14px; line-height: 1.4; animation: fadeIn 0.3s; }
+        .user { background: #333; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .ai { background: #1c1c1e; align-self: flex-start; border-left: 3px solid #FF9500; border-bottom-left-radius: 2px; }
+        
+        .input-box { width: 100%; max-width: 500px; padding: 12px; background: #000; display: flex; gap: 8px; border-top: 1px solid #333; padding-bottom: 25px; }
+        input { flex-grow: 1; background: #1c1c1e; border: 1px solid #333; border-radius: 10px; padding: 10px; color: #fff; outline: none; }
+        .ctrl-btn { background: #FF9500; border: none; width: 45px; height: 40px; border-radius: 10px; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+        #modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; display: flex; align-items: center; justify-content: center; }
+        .form { background: #1c1c1e; padding: 20px; border-radius: 15px; width: 280px; display: flex; flex-direction: column; gap: 10px; }
+        .form input, .form select { background: #2c2c2e; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 8px; }
+        .form button { background: #FF9500; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="modal" style="display: none;">
+        <div class="form">
+            <h3 style="margin:0; text-align: center;">⚙️ Настройки</h3>
+            <select id="p-sex"><option value="male">Мужчина</option><option value="female">Женщина</option></select>
+            <input type="number" id="p-w" placeholder="Вес (кг)">
+            <input type="number" id="p-h" placeholder="Рост (см)">
+            <input type="number" id="p-a" placeholder="Возраст">
+            <select id="p-g"><option value="lose">Похудеть</option><option value="gain">Масса</option><option value="balance">Баланс</option></select>
+            <button onclick="saveProfile()">Сохранить</button>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="main-ring">
+            <svg><circle class="bg" cx="60" cy="60" r="55"/><circle id="ring-main" cx="60" cy="60" r="55"/></svg>
+            <div class="label"><b id="cal-rem">0</b><small>ккал</small></div>
+        </div>
+        <div class="sub-rings">
+            <div class="ring-box"><svg><circle class="bg" cx="27" cy="27" r="25"/><circle id="ring-p" cx="27" cy="27" r="25"/></svg><div class="label"><b id="val-p">0</b><small>Б</small></div></div>
+            <div class="ring-box"><svg><circle class="bg" cx="27" cy="27" r="25"/><circle id="ring-f" cx="27" cy="27" r="25"/></svg><div class="label"><b id="val-f">0</b><small>Ж</small></div></div>
+            <div class="ring-box"><svg><circle class="bg" cx="27" cy="27" r="25"/><circle id="ring-c" cx="27" cy="27" r="25"/></svg><div class="label"><b id="val-c">0</b><small>У</small></div></div>
+        </div>
+        <div class="top-btns">
+            <button class="btn-sm" onclick="getAdvice()">✨ Совет</button>
+            <button class="btn-sm" onclick="document.getElementById('modal').style.display='flex'">⚙️ Профиль</button>
+            <button class="btn-sm" onclick="resetDay()">🔄 Сброс</button>
+        </div>
+    </div>
+
+    <div id="chat"></div>
+
+    <div class="input-box">
+        <button id="mic" class="ctrl-btn">🎤</button>
+        <input type="text" id="inp" placeholder="Что съели?">
+        <button class="ctrl-btn" onclick="send()">➡️</button>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chat');
+        const inp = document.getElementById('inp');
+
+        // Регистрация Service Worker для PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(reg => {
+                    console.log('SW Registered!', reg);
+                }).catch(err => console.log('SW Error', err));
+            });
+        }
+
+        function updateUI(data) {
+            const consumed = data.consumedToday || { cal: 0, p: 0, f: 0, c: 0 };
+            const limit = Number(data.dailyLimit) || 2100;
+            document.getElementById('cal-rem').innerText = Math.max(0, Math.round(limit - consumed.cal));
+            const setCircle = (id, val, max, dash) => {
+                const circle = document.getElementById(id);
+                const off = (!val || val <= 0) ? dash : dash - (dash * Math.min(val, max) / max);
+                circle.style.strokeDashoffset = isNaN(off) ? dash : off;
+            };
+            setCircle('ring-main', consumed.cal, limit, 345);
+            setCircle('ring-p', consumed.p, 150, 157);
+            setCircle('ring-f', consumed.f, 70, 157);
+            setCircle('ring-c', consumed.c, 250, 157);
+            document.getElementById('val-p').innerText = Math.round(consumed.p || 0);
+            document.getElementById('val-f').innerText = Math.round(consumed.f || 0);
+            document.getElementById('val-c').innerText = Math.round(consumed.c || 0);
+        }
+
+        function addMsg(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `msg ${isUser ? 'user' : 'ai'}`;
+            div.innerText = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function send() {
+            const v = inp.value; if(!v) return;
+            inp.value = ""; addMsg(v, true);
+            const r = await fetch('/analyze-chat', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({text:v}) });
+            const res = await r.json();
+            addMsg(res.text);
+            updateUI(res.userData);
+        }
+
+        async function getAdvice() {
+            addMsg("Тренер думает...", false);
+            const r = await fetch('/get-advice');
+            const res = await r.json();
+            addMsg("🦾 " + res.advice);
+        }
+
+        async function resetDay() {
+            if(confirm("Сбросить калории и чат?")) {
+                const r = await fetch('/reset', {method:'POST'});
+                const data = await r.json();
+                chat.innerHTML = "";
+                updateUI(data);
+            }
+        }
+
+        async function saveProfile() {
+            const b = { 
+                gender: document.getElementById('p-sex').value, 
+                weight: Number(document.getElementById('p-w').value), 
+                height: Number(document.getElementById('p-h').value), 
+                age: Number(document.getElementById('p-a').value), 
+                goal: document.getElementById('p-g').value 
+            };
+            if(!b.weight || !b.height) return alert("Заполни данные!");
+
+            const r = await fetch('/save-profile', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(b) });
+            const data = await r.json();
+            document.getElementById('modal').style.display = 'none';
+            updateUI(data);
+            
+            addMsg("Тренер анализирует твои данные...", false);
+            try {
+                const rAdvice = await fetch('/welcome-advice');
+                const resAdvice = await rAdvice.json();
+                addMsg(resAdvice.text, false);
+            } catch(e) {
+                addMsg("Профиль сохранен! Готов записывать твою еду.", false);
+            }
+        }
+
+        fetch('/get-data').then(r => r.json()).then(data => {
+            if(!data.profile) document.getElementById('modal').style.display = 'flex';
+            else {
+                updateUI(data);
+                if(data.logs) {
+                    chat.innerHTML = "";
+                    data.logs.forEach(log => addMsg(log.text, log.role === 'user'));
+                }
+                document.getElementById('p-w').value = data.profile.weight || "";
+                document.getElementById('p-h').value = data.profile.height || "";
+                document.getElementById('p-a').value = data.profile.age || "";
+            }
+        });
+
+        const rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
+        rec.lang = 'ru-RU';
+        document.getElementById('mic').onclick = () => rec.start();
+        rec.onresult = (e) => { inp.value = e.results[0][0].transcript; send(); };
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "short_name": "CoachAI",
+  "name": "Coach AI: Твой Диетолог",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#000000",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#FF9500",
+  "description": "AI Тренер и счетчик калорий"
+}
