@@ -13,10 +13,8 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
-  "background_color": "#000000",
+  "start_url": ".",
   "display": "standalone",
-  "scope": "/",
   "theme_color": "#FF9500",
-  "description": "AI Тренер и счетчик калорий"
+  "background_color": "#000000"
 }
